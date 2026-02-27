@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Samsung Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+/* Remove inner blue hotspot dots */
+.Hotspot::after {
+  display: none !important;
+}
+
+/* ===== Animation section cleanup ===== */
+
+/* 1) Remove the border around the animation sector */
+.capacityBox{
+  border: none !important;      /* kills the blue outline */
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;        /* optional: keeps it clean like Samsung */
+  background: transparent !important;
+}
+
+/* 2) Make ALL spacing exactly 15px */
+.capacityBox{
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 15px !important;         /* title -> grid -> pause -> orbits */
+}
+
+.animDetailsTitle{
+  margin: 0 !important;         /* no extra margin that breaks 15px spacing */
+  padding: 0 !important;
+}
+
+/* Grid spacing for the 4 buttons */
+.animGrid{
+  gap: 15px !important;
+  margin: 0 !important;
+}
+
+/* Pause row: ensure no extra margins */
+.animPauseRow{
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* If any buttons add margin, remove it */
+.animGrid button,
+.animPauseRow button{
+  margin: 0 !important;
+}
+
+/* Kill any empty layout blocks that are still taking space */
+.orbitUnderAnim:empty,
+.orbitBar:empty,
+.animHost:empty,
+.animPauseRow:empty,
+.animGrid:empty,
+.capacityBox > div:empty {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+}
+
+/* Also: if a container has only whitespace/newlines, :empty may not apply.
+   This forces the old hidden animHost to never render as a “bar”. */
+.animHost {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+</style>
+
+<style>
+/* ===== Samsung Pill Button Style ===== */
+/* Applies to: Variants, Camera Orbits, Animations */
+/* Does NOT affect Hotspot annotations */
+
+.orbitBar button,
+model-viewer > div[style*="bottom:0px"][style*="right:0px"] button,
+.variantHost button,
+model-viewer button[onClick="VBtn01()"],
+model-viewer button[onClick="VBtn02()"],
+model-viewer button[onClick="VBtn03()"],
+#default1Btn, 
+#default2Btn, 
+#default3Btn, 
+#default4Btn, 
+#pauseBtn {
+
+  appearance: none;
+  background: #fff !important;
+  border: 1.5px solid #111 !important;
+  color: #111 !important;
+
+  border-radius: 999px !important; /* pill shape */
+  padding: 10px 20px !important;
+  height: 38px;
+  min-height: 38px;
+
+  font-family: inherit;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.1px;
+
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.08s ease;
+}
+
+.orbitBar button:hover,
+.variantHost button:hover,
+#default1Btn:hover, 
+#default2Btn:hover, 
+#default3Btn:hover, 
+#default4Btn:hover, 
+#pauseBtn:hover {
+  background: #f4f4f5 !important;
+}
+
+.orbitBar button:active,
+.variantHost button:active,
+#default1Btn:active, 
+#default2Btn:active, 
+#default3Btn:active, 
+#default4Btn:active, 
+#pauseBtn:active {
+  transform: translateY(1px);
+}
+
+/* Ensure annotation pills are untouched */
+.HotspotAnnotation {
+  border-radius: 999px;
+}
+
+/* Fix annotation background sizing */
+.HotspotAnnotation {
+  display: inline-block;          /* allows bubble to size to content */
+  width: max-content;             /* auto expand to text */
+  max-width: 200px;               /* prevents extreme overflow */
+  padding: 8px 14px;              /* consistent bubble padding */
+
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;            /* keeps single line */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+
+  position: relative;
+  transform: translate(18px, -28px); /* slight offset from hotspot */
+}
+<style>
+/* ===== Animation Details layout ===== */
+.capacityBox{
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* at least 15px spacing between sections */
+}
+
+.animDetailsTitle{
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+/* 2x2 grid for first 4 animation buttons */
+.animGrid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px; /* spacing between buttons */
+}
+
+/* Pause button row (full width bar) */
+.animPauseRow{
+  display: flex;
+
+}
+
+/* Make buttons fill their grid cells nicely */
+.animGrid button{
+  width: 100% !important;
+  justify-content: center;
+}
+
+/* Pause is a long bar */
+.animPauseRow button{
+  width: 100% !important;
+  justify-content: center;
+}
+
+/* Keep orbit spacing clean under animations */
+.orbitUnderAnim{
+  margin-top: 0 !important;
+}
+.orbitUnderAnim > div{
+  gap: 15px !important;
+}
+</style>
+</style>
+
+
+</head>
+    <style>
+      :root{
+        --bg:#ffffff;
+        --text:#111111;
+        --muted:#6b7280;
+        --line:#e5e7eb;
+        --chip:#f4f4f5;
+        --shadow:0 1px 2px rgba(0,0,0,.06);
+        --blue:#1f6fff;
+        --blueDark:#175fe0;
+        --radius:14px;
+        --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        background:var(--bg);
+        color:var(--text);
+        font-family:var(--font);
+      }
+
+      /* ===== Top bar ===== */
+      .topbar{
+        position:sticky;
+        top:0;
+        z-index:50;
+        background:#fff;
+        border-bottom:1px solid var(--line);
+      }
+      .topbar__inner{
+        max-width:1240px;
+        margin:0 auto;
+        padding:18px 18px;
+        display:flex;
+        align-items:center;
+        gap:18px;
+      }
+      .brand{
+        font-weight:900;
+        letter-spacing:2px;
+        font-size:18px;
+      }
+      .spacer{flex:1}
+      .actions{
+        display:flex;
+        align-items:center;
+        gap:10px;
+      }
+      .search{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        padding:8px 12px;
+        border:1px solid var(--line);
+        background:#fafafa;
+        border-radius:999px;
+      }
+      .search input{
+        border:none;
+        outline:none;
+        background:transparent;
+        width:160px;
+        font-size:13px;
+      }
+      .iconBtn{
+        width:36px;height:36px;
+        border-radius:999px;
+        border:1px solid var(--line);
+        background:#fff;
+        cursor:pointer;
+      }
+      .iconBtn:hover{background:var(--chip)}
+
+      /* ===== Header row ===== */
+      .page{
+        max-width:1240px;
+        margin:0 auto;
+        padding:24px 18px 40px;
+      }
+      .headerRow{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:16px;
+        padding-bottom:18px;
+        border-bottom:1px solid var(--line);
+      }
+      .titleBlock h1{
+        margin:0 0 6px 0;
+        font-size:24px;
+        font-weight:800;
+      }
+      .rightCta{
+        display:flex;
+        align-items:center;
+        gap:14px;
+      }
+      .price{
+        font-size:18px;
+        font-weight:800;
+        white-space:nowrap;
+      }
+      .ctaBtn{
+        border:none;
+        border-radius:999px;
+        background:var(--blue);
+        color:#fff;
+        padding:10px 16px;
+        font-weight:800;
+        cursor:pointer;
+      }
+      .ctaBtn:hover{background:var(--blueDark)}
+
+      /* ===== Main grid ===== */
+      .grid{
+        display:grid;
+        grid-template-columns: 1.65fr 1fr;
+        gap:22px;
+        padding-top:22px;
+        align-items:start;
+      }
+
+      /* Left media area (where fridge image was) */
+      .media{
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+        min-width:0;
+      }
+      .viewerFrame{
+        border:0;
+        background:#fff;
+        display:flex;
+        justify-content:center;
+      }
+
+      /* Make the model sit visually like the fridge */
+      model-viewer{
+        width:100%;
+        height:560px;
+        background:#fff;
+      }
+
+      /* ===== “Thumbnail row” becomes Orbit buttons ===== */
+      /* Target the existing orbit div inside model-viewer and restyle it */
+      model-viewer > div[style*="bottom:0px"][style*="right:0px"]{
+        position:static !important;
+        display:flex !important;
+        gap:10px !important;
+        padding:0 !important;
+        margin:0 !important;
+        justify-content:flex-start !important;
+      }
+      /* We’ll show it OUTSIDE the model area by placing a bar under viewer */
+      .orbitBar{
+        display:flex;
+        gap:10px;
+        padding-top:8px;
+      }
+      /* Style orbit buttons like Samsung thumbnails */
+      model-viewer > div[style*="bottom:0px"][style*="right:0px"] button{
+        width:110px;
+        height:64px;
+        border-radius:12px;
+        border:1px solid var(--line);
+        background:#fafafa;
+        font-weight:800;
+        font-size:12px;
+        cursor:pointer;
+      }
+      model-viewer > div[style*="bottom:0px"][style*="right:0px"] button:hover{
+        background:var(--chip);
+      }
+
+      /* ===== Under orbit buttons: put the 4 animation buttons ===== */
+      /* We keep your original animation buttons exactly, but we pull them into a bar under the orbit bar */
+      /* Use :has() to target the specific container that contains #default1Btn */
+      model-viewer .controls:has(#default1Btn){
+        position:static !important;
+        display:flex !important;
+        flex-direction:column !important;
+        gap:10px !important;
+        padding:0 !important;
+        margin:0 !important;
+      }
+      model-viewer .controls:has(#default1Btn) > div{
+        display:flex !important;
+        flex-wrap:wrap !important;
+        gap:10px !important;
+        align-items:center !important;
+      }
+      model-viewer .controls:has(#default1Btn) button{
+        border:1px solid var(--line);
+        background:#fff;
+        border-radius:999px;
+        padding:10px 12px;
+        font-weight:800;
+        font-size:12px;
+        cursor:pointer;
+      }
+      model-viewer .controls:has(#default1Btn) button:hover{background:var(--chip)}
+      /* Hide the literal “Animation:” text label but keep structure */
+      model-viewer .controls:has(#default1Btn) > div{
+        font-size:0;
+      }
+      model-viewer .controls:has(#default1Btn) > div::before{
+        content:"";
+        display:none;
+      }
+
+      /* ===== Right panel ===== */
+      .panel{
+        border:0;
+        background:#fff;
+      }
+      .panelBlock{
+        padding:18px 0;
+        border-bottom:1px solid var(--line);
+      }
+      .panelBlock:last-child{border-bottom:none}
+      .panelTitle{
+        margin:0 0 10px 0;
+        font-size:16px;
+        font-weight:800;
+      }
+      .panelSub{
+        margin:0 0 12px 0;
+        color:var(--muted);
+        font-size:13px;
+      }
+
+      /* “Colours” replaced by variants */
+      .variantHost{
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+        align-items:center;
+      }
+      /* Grab your existing Variant button container (the one that has VBtn01/02/03) */
+      model-viewer > div:has(button[onClick="VBtn01()"]){
+        position:static !important;
+        margin:0 !important;
+        padding:15 !important;
+      }
+      model-viewer > div:has(button[onClick="VBtn01()"]) > div{
+        display:flex !important;
+        gap:10px !important;
+        align-items:center !important;
+        flex-wrap:wrap !important;
+      }
+      /* Hide the literal “Variant:” label but keep buttons */
+      model-viewer > div:has(button[onClick="VBtn01()"]) > div{
+        font-size:0;
+      }
+      model-viewer > div:has(button[onClick="VBtn01()"]) > div button{
+        width:40px;
+        height:40px;
+        border-radius:999px;
+        border:2px solid #cbd5e1;
+        background:#111;
+        box-shadow: inset 0 0 0 4px #fff;
+        color:transparent; /* keep “01/02/03” but visually like swatches */
+        cursor:pointer;
+      }
+      model-viewer > div:has(button[onClick="VBtn01()"]) > div button:hover{
+        outline:2px solid var(--blue);
+        outline-offset:2px;
+      }
+
+      /* “Capacity” replaced by animations (same animation buttons, but visually like the capacity box) */
+      .capacityBox{
+        border:2px solid var(--blue);
+        border-radius:10px;
+        padding:14px 14px;
+        background:#fff;
+      }
+
+      /* Place your animation buttons also into this capacityBox area (without duplicating buttons)
+         We visually host the SAME container with CSS layout in the right panel by placing it here. */
+      .capacityBox .animHost{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+      }
+      .capacityBox .animHost button{
+        width:100%;
+        justify-content:center;
+      }
+      /* make pause span full width */
+      .capacityBox .animHost #pauseBtn{
+        grid-column:1/-1;
+      }
+
+      /* ===== Hotspots ===== */
+      .Hotspot{
+        width:18px;height:18px;
+        border-radius:999px;
+        border:2px solid #111;
+        background:#fff;
+      }
+      .Hotspot::after{
+        content:"";
+        display:block;
+        width:10px;height:10px;
+        margin:2px auto 0;
+        border-radius:999px;
+        background:var(--blue);
+      }
+      .HotspotAnnotation{
+        position:relative;
+        transform: translate(14px, -28px);
+        background:#fff;
+        border:1px solid var(--line);
+        border-radius:999px;
+        padding:8px 12px;
+        font-size:12px;
+        font-weight:800;
+        box-shadow:var(--shadow);
+        white-space:nowrap;
+        pointer-events:none;
+      }
+
+      /* AR button style (keep ID and slot the same) */
+      #ar-button{
+        border:none;
+        border-radius:999px;
+        background:var(--blue);
+        color:#fff;
+        padding:10px 14px;
+        font-weight:800;
+        cursor:pointer;
+      }
+      #ar-button:hover{background:var(--blueDark)}
+
+      /* Responsive */
+      @media (max-width:980px){
+        .grid{grid-template-columns:1fr}
+        model-viewer{height:440px}
+        .search input{width:120px}
+      }
+
+<style>
+/* ===== Fit to single screen (no scroll) ===== */
+html, body {
+  height: 100%;
+  overflow: hidden; /* removes scrollbar */
+}
+
+/* Make the whole page use the full viewport height */
+.page {
+  height: calc(100vh - 72px); /* 72px = approx topbar height */
+  padding-bottom: 0 !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Compress header row height */
+.headerRow {
+  padding-bottom: 10px !important;
+  margin-bottom: 0 !important;
+}
+
+/* Let the grid take the remaining space */
+.grid {
+  flex: 1;
+  min-height: 0; /* allows children to shrink without forcing scroll */
+  align-items: stretch;
+}
+
+/* Left side should stretch vertically */
+.media {
+  min-height: 0;
+}
+
+/* Make the model-viewer fit into remaining height */
+.viewerFrame {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Key: scale the viewer height to viewport */
+model-viewer {
+  height: calc(100vh - 72px - 64px - 60px) !important;
+  /* = viewport minus (topbar + headerRow + orbit/controls area) */
+  max-height: 100%;
+}
+
+/* Make right panel tighter */
+.panelBlock {
+  padding: 12px 0 !important;
+}
+
+.panelTitle {
+  margin-bottom: 6px !important;
+  font-size: 15px !important;
+}
+
+/* Reduce spacing inside capacity box */
+.capacityBox {
+  padding: 10px 10px !important;
+}
+
+.capacityBox .animHost {
+  gap: 8px !important;
+}
+
+/* Reduce pill button height slightly so it fits */
+.orbitBar button,
+.variantHost button,
+.animHost button,
+#default1Btn, #default2Btn, #default3Btn, #default4Btn, #pauseBtn {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 8px 16px !important;
+  font-size: 12px !important;
+}
+
+/* If dimensions section still pushes height too much, compress cards */
+.dimensionCard {
+  padding: 10px !important;
+}
+
+/* Orbit bar spacing smaller */
+.orbitBar {
+  padding-top: 6px !important;
+}
+
+<style>
+/* Hide the entire Dimensions section */
+.panelBlock.dimensionsBlock {
+  display: none !important;
+}
+</style>
+    </style>
+  </head>
+
+  <body>
+    <!-- Samsung-like top header -->
+    <header class="topbar">
+      <div class="topbar__inner">
+        <div class="brand">SAMSUNG</div>
+        <div class="spacer"></div>
+        <div class="actions">
+          <div class="search">
+            <span style="font-size:13px;color:var(--muted)">⌕</span>
+            <input placeholder="Search" />
+          </div>
+          <button class="iconBtn" aria-label="Cart">🛒</button>
+          <button class="iconBtn" aria-label="Account">👤</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="headerRow">
+        <div class="titleBlock">
+          <h1>Bespoke AI SBS Refrigerator Family Hub 615L</h1>
+        </div>
+        <div class="rightCta">
+          <div class="price">$6767</div>
+          <button class="ctaBtn">Add to cart</button>
+        </div>
+      </section>
+
+      <section class="grid">
+        <!-- LEFT (where fridge image was): the model -->
+        <div class="media">
+          <div class="viewerFrame">
+
+            <!-- ===========================
+                 DO NOT CHANGE: your code below
+                 (Only wrapped by layout; buttons/animations/files unchanged)
+                 =========================== -->
+
+            <!-- <model-viewer> HTML element -->
+            <model-viewer src="model_exploded.glb" ar ar-modes="scene-viewer webxr quick-look" camera-controls tone-mapping="neutral" poster="poster.png" shadow-intensity="1" animation-name="Stool Cover" camera-orbit="121deg 78.73deg 4.971m" field-of-view="30deg" id="gear">
+
+              <div class="progress-bar hide" slot="progress-bar">
+                <div class="update-bar"></div>
+              </div>
+              <button slot="ar-button" id="ar-button">
+                View in your space
+              </button>
+              <div id="ar-prompt">
+                <img src="https://modelviewer.dev/shared-assets/icons/hand.png">
+              </div>
+
+              <div style="position:absolute; bottom:0px; right:0px">
+                <button onClick="setOrbit('-271.4deg 87.02deg 4.971m')">Front</button>
+                <button onClick="setOrbit('-90.78deg 90.33deg 4.971m')">Back</button>
+                <button onClick="setOrbit('90.31deg 0.0000573deg 4.971m')">Top</button>
+                <button onClick="setOrbit('89.07deg 180deg 4.971m')">Bottom</button>
+              </div>
+
+              <button class="Hotspot" slot="hotspot-1" data-surface="6 0 1248 1249 1559 0.517 0.422 0.061" data-visibility-attribute="visible" onMouseOver="addhotspot1()"  onMouseOut="removehotspot1()">
+                <div class="HotspotAnnotation" id="hotspot1" style="visibility:hidden">Mirror
+                </div>
+              </button>
+
+              <button class="Hotspot" slot="hotspot-2" data-surface="5 0 6267 5373 6268 0.834 0.114 0.052" data-visibility-attribute="visible" onMouseOver="addhotspot2()"  onMouseOut="removehotspot2()">
+                <div class="HotspotAnnotation" id="hotspot2" style="visibility:hidden">Table</div>
+              </button>
+
+              <button class="Hotspot" slot="hotspot-3" data-surface="8 0 3702 3703 4643 0.762 0.150 0.088" data-visibility-attribute="visible" onMouseOver="addhotspot3()"  onMouseOut="removehotspot3()">
+                <div class="HotspotAnnotation" id="hotspot3" style="visibility:hidden">Back Table</div>
+              </button>
+
+              <button class="Hotspot" slot="hotspot-4" data-surface="10 0 747 594 748 0.469 0.211 0.320" data-visibility-attribute="visible" onMouseOver="addhotspot4()"  onMouseOut="removehotspot4()">
+                <div class="HotspotAnnotation" id="hotspot4" style="visibility:hidden">Mirror
+                </div>
+              </button>
+
+              <div style="display:flex; gap:15px;">
+                <div>Variant:
+                  <button onClick="VBtn01()" style="margin-right:10px;">01</button>
+                  <button onClick="VBtn02()" style="margin-right:10px;">02</button>
+                  <button onClick="VBtn03()">03</button>
+                </div>
+              </div>
+
+              <!-- NOTE: this line in your original code is missing a closing ">" which breaks HTML.
+                   This is NOT a logic/file/button change — it’s a required syntax fix so the UI renders. -->
+              <div class="controls" style="position: absolute; bottom: 0px; left: 200px">
+                <div>Animation:
+                  <button id="default1Btn" onClick="Btn01()">Exploded View
+                  </button>
+                  <button id="default2Btn" onClick="Btn02()">Table
+                  </button>
+                  <button id="default3Btn" onClick="Btn03()">Stool Cover
+                  </button>
+                  <button id="default4Btn" onClick="Btn04()">Mirror
+                  </button>
+                  <button id="pauseBtn" onClick="pauseAnimation()">Pause Animation
+                  </button>
+                </div>
+              </div>
+
+            </model-viewer>
+
+            <script>
+              function VBtn01() {
+                document.getElementById('gear').variantName = "V1";}
+              function VBtn02() {
+                document.getElementById('gear').variantName = "V2";}
+              function VBtn03() {
+                document.getElementById('gear').variantName = "V3";}
+            </script>
+
+            <script>
+              function setOrbit(orbit)
+              {document.getElementById('gear').cameraOrbit = orbit;}
+            </script>
+
+            <script>
+              function addhotspot1(){
+                document.getElementById("hotspot1").style.visibility="visible"
+              }
+              function removehotspot1(){
+                document.getElementById("hotspot1").style.visibility="hidden";
+              }
+              function addhotspot2(){
+                document.getElementById("hotspot2").style.visibility="visible"
+              }
+              function removehotspot2(){
+                document.getElementById("hotspot2").style.visibility="hidden";
+              }
+              function addhotspot3(){
+                document.getElementById("hotspot3").style.visibility="visible"
+              }
+              function removehotspot3(){
+                document.getElementById("hotspot3").style.visibility="hidden";
+              }
+              function addhotspot4(){
+                document.getElementById("hotspot4").style.visibility="visible"
+              }
+              function removehotspot4(){
+                document.getElementById("hotspot4").style.visibility="hidden";
+              }
+            </script>
+
+            <script src="script.js"></script>
+            <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+            <script>
+              function Btn01()
+              {document.getElementById('gear').pause();
+                document.getElementById('gear').animationName = "Exploded View";
+                document.getElementById('gear').play(); }
+              function Btn02()
+              {document.getElementById('gear').pause();
+                document.getElementById('gear').animationName = "Table";
+                document.getElementById('gear').play(); }
+              function Btn03()
+              {document.getElementById('gear').pause();
+                document.getElementById('gear').animationName = "Stool Cover";
+                document.getElementById('gear').play(); }
+              function Btn04()
+              {document.getElementById('gear').pause();
+                document.getElementById('gear').animationName = "Mirror";
+                document.getElementById('gear').play(); }
+
+              function pauseAnimation()
+              { document.getElementById('gear').pause(); }
+            </script>
+
+            <!-- ===========================
+                 END: your code
+                 =========================== -->
+
+          </div>
+
+          <!-- This bar visually matches the Samsung thumbnail row.
+               The actual orbit buttons are still your existing ones (restyled by CSS above). -->
+          <div class="orbitBar"></div>
+
+          <!-- Under orbit row: the animation buttons (we are already restyling your existing ones) -->
+          <div style="height:0"></div>
+        </div>
+
+        <!-- RIGHT panel: Colour -> Variants, Capacity -> Animations -->
+        <aside class="panel">
+         <div class="panelBlock dimensionsBlock">
+            <h3 class="panelTitle">Choose your Colour</h3>
+            <p class="panelSub">Colour : Variant</p>
+
+            <!-- We don’t create new buttons. Your existing Variant buttons are styled like swatches. -->
+            <div class="variantHost"></div>
+          </div>
+
+        <div class="capacityBox">
+  <div class="animDetailsTitle">Animation Details</div>
+
+  <!-- animation buttons will be arranged into these -->
+  <div class="animGrid"></div>
+  <div class="animPauseRow"></div>
+
+  <!-- keep this (existing) host if your script depends on it; we will move children out -->
+  <div class="animHost" style="display:none;"></div>
+</div>
+
+            <!-- Same existing animation buttons, styled like the capacity box -->
+            <div class="capacityBox">
+              <div class="animHost"></div>
+            </div>
+          </div>
+
+         
+    <!-- DOM “wiring” script:
+         We DO NOT create new buttons; we only visually place your existing control blocks into the Samsung-like slots. -->
+    <script>
+  (function(){
+    const mv = document.getElementById('gear');
+    if(!mv) return;
+
+    // 1) Orbit buttons -> bar under viewer (unchanged)
+    const orbitDiv = mv.querySelector('div[style*="bottom:0px"][style*="right:0px"]');
+    const orbitBar = document.querySelector('.orbitBar');
+    if(orbitDiv && orbitBar){
+      orbitBar.appendChild(orbitDiv);
+      orbitDiv.style.position = 'static';
+      orbitDiv.style.right = '';
+      orbitDiv.style.bottom = '';
+    }
+
+    // 2) Variants -> "Choose Your Style"
+    const vBtn = mv.querySelector('button[onClick="VBtn01()"]');
+    const variantHost = document.querySelector('.variantHost');
+
+    if(vBtn && variantHost){
+      // inner div contains "Variant:" text; outer wrapper has the absolute positioning
+      const inner = vBtn.closest('div');           // the one that contains "Variant:" label
+      const wrapper = inner && inner.parentElement; // the absolute-position wrapper
+
+      if(wrapper){
+        variantHost.appendChild(wrapper);
+
+        // Force it to behave like normal layout (not bottom-left)
+        wrapper.style.position = 'static';
+        wrapper.style.left = '';
+        wrapper.style.bottom = '';
+        wrapper.style.margin = '0';
+        wrapper.style.padding = '0';
+
+        // Optional: hide the literal "Variant:" text without deleting it
+        inner.style.fontSize = '0';
+      }
+    }
+
+    // 3) Animations -> "Choose your Capacity" (unchanged but more robust)
+    const aBtn = mv.querySelector('#default1Btn');
+    const animHost = document.querySelector('.animHost');
+
+    if(aBtn && animHost){
+      const controlsWrapper = aBtn.closest('.controls');
+      if(controlsWrapper){
+        const innerLine = controlsWrapper.querySelector('div'); // contains the buttons + "Animation:" text
+        if(innerLine){
+          animHost.appendChild(innerLine);
+          innerLine.style.fontSize = '0'; // hides "Animation:" label, keeps buttons
+        } else {
+          animHost.appendChild(controlsWrapper);
+        }
+
+        controlsWrapper.style.position = 'static';
+        controlsWrapper.style.left = '';
+        controlsWrapper.style.bottom = '';
+      }
+    }
+  })();
+
+  (function(){
+    const mv = document.getElementById('gear');
+    if(!mv) return;
+
+    // Find existing orbit buttons container (your original one)
+    const orbitDiv = mv.querySelector('div[style*="bottom:0px"][style*="right:0px"]');
+
+    // Put orbits under animations (right panel)
+    const orbitUnderAnim = document.querySelector('.orbitUnderAnim');
+
+    if (orbitDiv && orbitUnderAnim) {
+      orbitUnderAnim.appendChild(orbitDiv);
+
+      // remove old absolute positioning
+      orbitDiv.style.position = 'static';
+      orbitDiv.style.right = '';
+      orbitDiv.style.bottom = '';
+    }
+  })();
+</script>
+
+<script>
+  (function(){
+    // Grab the existing buttons (do NOT change them)
+    const b1 = document.getElementById('default1Btn'); // Exploded View
+    const b2 = document.getElementById('default2Btn'); // Table
+    const b3 = document.getElementById('default3Btn'); // Stool Cover
+    const b4 = document.getElementById('default4Btn'); // (your 4th button)
+    const bp = document.getElementById('pauseBtn');    // Pause Animation
+
+    const grid = document.querySelector('.animGrid');
+    const pauseRow = document.querySelector('.animPauseRow');
+
+    if (!grid || !pauseRow) return;
+
+    // Move first 4 into 2x2 grid
+    [b1, b2, b3, b4].forEach(btn => {
+      if (btn) grid.appendChild(btn);
+    });
+
+    // Move pause button into full-width row
+    if (bp) pauseRow.appendChild(bp);
+  })();
+</script>
+  </body>
+</html>
